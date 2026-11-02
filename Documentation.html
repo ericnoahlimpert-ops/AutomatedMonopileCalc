@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Automated Monopile Calculation (Abaqus) - Automated Monopile Calculation</title>
+<link rel="stylesheet" href="docs/style.css">
+</head>
+<body>
+<header>
+<div class="brand">Automated Monopile Calculation</div>
+<nav><a href="Documentation.html" class="active">Overview</a><a href="docs/user_guide.html">User guide</a><a href="docs/spring_models.html">Spring models</a><a href="docs/calculation_method.html">Calculation method</a><a href="docs/verification.html">Verification</a><a href="docs/developer_guide.html">Developer guide</a></nav>
+</header>
+<main>
+<h1 id="automated-monopile-calculation-abaqus">Automated Monopile Calculation (Abaqus)</h1>
+<p>Builds and solves 1D models of laterally loaded monopiles in Abaqus/CAE: the pile is a beam, the soil is a set of nonlinear springs (connector elements to ground) whose curves come from a selectable soil-spring model. Several piles, soil profiles and spring models can be calculated in one run and compared.</p>
+<div class="table-wrap"><table><thead><tr><th>Spring model</th><th>Type</th><th>Reference</th></tr></thead><tbody><tr><td><code>API</code></td><td>p-y (sand: API tanh, clay: Matlock)</td><td>API RP 2GEO / RP 2A</td></tr><tr><td><code>KALLEHAVE</code></td><td>API p-y, diameter-dependent initial stiffness</td><td>Kallehave et al. (2012)</td></tr><tr><td><code>SORENSEN</code></td><td>API p-y, diameter-dependent initial stiffness</td><td>Sørensen et al. (2010)</td></tr><tr><td><code>THIEKEN</code></td><td>p-y with stretching factors (iterative)</td><td>Thieken, Achmus &amp; Lemke (2015)</td></tr><tr><td><code>PISA_SAND</code></td><td>multi-spring: p, m, H_B, M_B (iterative)</td><td>Burd et al. (2020), GDSM</td></tr><tr><td><code>PISA_CLAY</code></td><td>multi-spring: p, m, H_B, M_B</td><td>Byrne et al. (2020), Cowden till; Bothkennar clay</td></tr><tr><td><code>PISA</code></td><td>PISA for layered sand/clay profiles</td><td>Burd et al. (2020b)</td></tr><tr><td><code>TOTT_BUSWELL</code></td><td>CPT-based multi-spring: p, m, H_B, M_B (SLS)</td><td>Tott-Buswell, Prendergast &amp; Gavin (2024)</td></tr></tbody></table></div>
+<p>Main features</p>
+<ul><li>Pile from a CSV file: any number of sections, conical sections allowed.</li><li>Layered soil from a CSV file; nodes are placed at every layer boundary and at the mudline.</li><li>Force- or displacement-controlled loading in load levels, with a lever arm (H plus moment H·h).</li><li>Iterative spring models (PISA sand, Thieken) solved by fixed-point iteration with Aitken relaxation.</li><li>Break criteria: maximum mudline displacement, maximum mudline rotation, vertical tangent of the deflection line at the pile toe.</li><li>Results per case: <code>.odb</code>, <code>.cae</code>, CSV tables of the load-displacement curve and the pile profile (v, ψ, N, Q, M), PNG plots, and a summary of all cases.</li><li>Input folders: every calculation (e.g. each verification case) has its own folder with <code>Input.py</code>, <code>AdvancedSettings.py</code> and the CSV files, selected when starting the <code>.bat</code>.</li><li>Live progress in the console window.</li></ul>
+<p>The implementation has been verified against published results of PISA (Burd et al. 2020, sand, within 0.2 %; Byrne et al. 2020, clay, within 2–4 % with soil profiles read from figures; Burd et al. 2020b, layered soils, ultimate loads within 1.5 %) and Thieken et al. (2015); the Tott-Buswell model was checked for plausibility against Tott-Buswell et al. (2024), see <a href="docs/verification.html">Verification</a>.</p>
+<h2 id="requirements">Requirements</h2>
+<ul><li>Windows with Abaqus/CAE (tested with Abaqus Python 3.10; matplotlib from the Abaqus Python installation is used for the plots).</li><li>Windows PowerShell 5.1 (part of Windows) for the progress display.</li><li>No other Python packages are needed.</li></ul>
+<h2 id="quick-start">Quick start</h2>
+<ol><li>Put the pile and soil CSV files into the input folder <code>Inputs/</code> (see <code>Inputs/pile_thieken_ref.csv</code> and <code>Inputs/soil_thieken_ref.csv</code>).</li><li>Edit <a href="Inputs/Input.py">Inputs/Input.py</a>: the files, the spring model(s), the load and, if needed, the break criteria.</li><li>Double-click <strong><code>run_abaqus.bat</code></strong> (no GUI) or <strong><code>run_abaqus_gui.bat</code></strong> (opens Abaqus/CAE and leaves the model open). The window shows every finished load level and calculation.</li><li>Results are in <code>results/&lt;pile&gt;/&lt;soil&gt;/&lt;model&gt;/</code>, e.g. <code>results/pile_thieken_ref/soil_thieken_ref/Thieken/</code>.</li></ol>
+<p>Other input folders, e.g. the verification cases, are run with <code>run_abaqus.bat &lt;input folder&gt;</code> (or by dragging the folder onto the <code>.bat</code> file):</p>
+<pre class="code"><code>run_abaqus.bat Inputs\Verification\PISA_Verification\C1_ultimate</code></pre>
+<p>Example <code>Inputs/Input.py</code>, comparing four spring models on one pile:</p>
+<pre class="code python"><code>PILE_CSV = &quot;pile_thieken_ref.csv&quot;
+SOIL_CSV = &quot;soil_thieken_ref.csv&quot;
+SPRING_MODEL = [&quot;THIEKEN&quot;, &quot;API&quot;, &quot;KALLEHAVE&quot;, &quot;SORENSEN&quot;]
+LOAD_CONTROL = &quot;force&quot;
+HORIZONTAL_LOAD = 30e6     # N
+LEVER_ARM = 25.0           # m
+LOAD_INCREMENT = 0.1       # 10 load levels</code></pre>
+<h2 id="project-structure">Project structure</h2>
+<pre class="code"><code>AutomatedMonopileCalc/
+├── Inputs/                default input folder
+│   ├── Input.py           settings of a calculation (edit this)
+│   ├── AdvancedSettings.py  rarely changed settings
+│   ├── *.csv              pile and soil files
+│   └── Verification/      one complete input folder per verification run
+│       ├── Thieken_Verification/&lt;run&gt;/   Input.py, AdvancedSettings.py, CSV files
+│       └── PISA_Verification/&lt;run&gt;/
+├── results/               results (results/verification: verification runs
+│                          with an explanation .md per group)
+├── main.py                entry point run by Abaqus/CAE
+├── run_abaqus.bat         start without GUI (live progress)
+├── run_abaqus_gui.bat     start in Abaqus/CAE (live progress)
+├── run_abaqus.ps1         helper of the .bat files (starts Abaqus, shows the log)
+├── compare_thieken_ref.py comparison with Thieken et al. (2015), plain Python
+├── methods/
+│   ├── csv_reader.py      reading and validation of the CSV files
+│   ├── geometry.py        beam model, mesh, cross-sections, materials
+│   ├── connectors.py      soil springs as connector elements
+│   ├── analysis.py        boundary conditions, step, load, job, odb reading
+│   ├── solver.py          load levels, spring iteration, displacement
+│   │                      control, break criteria
+│   ├── postprocessing.py  pile_head.csv, pile_profile.csv, summary.csv
+│   ├── plots.py           PNG plots
+│   ├── progress.py        progress log
+│   └── spring_models/     base.py (framework, shared curves) and one module
+│                          per spring model
+├── Documentation.html     start page of the documentation (this page)
+└── docs/                  documentation pages (HTML) and style.css</code></pre>
+<h2 id="documentation">Documentation</h2>
+<div class="table-wrap"><table><thead><tr><th>Document</th><th>Content</th></tr></thead><tbody><tr><td><a href="docs/user_guide.html">User guide</a></td><td>Running calculations, input files, all settings, output files, troubleshooting</td></tr><tr><td><a href="docs/spring_models.html">Spring models</a></td><td>Formulas, parameters and limits of every spring model</td></tr><tr><td><a href="docs/calculation_method.html">Calculation method</a></td><td>Model, mesh, spring discretisation, solver, relaxation, displacement control, break criteria, evaluation of the results</td></tr><tr><td><a href="docs/verification.html">Verification</a></td><td>Comparison with PISA (Burd et al. 2020) and Thieken et al. (2015)</td></tr><tr><td><a href="docs/developer_guide.html">Developer guide</a></td><td>Code structure, adding a spring model, conventions, Abaqus pitfalls, testing</td></tr></tbody></table></div>
+<h2 id="units">Units</h2>
+<p>SI inside the model (N, m, Pa). Soil parameters in the CSV files use geotechnical units (kN/m³, kPa, MPa, degrees), see the user guide.</p>
+</main>
+<footer>Automated Monopile Calculation &middot; documentation</footer>
+</body>
+</html>

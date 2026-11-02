@@ -1,0 +1,2 @@
+increment,load_factor,H [N],M_head [Nm],U1 [m],U2 [m],U3 [m],UR1 [rad],UR2 [rad],UR3 [rad],v_mudline [m],psi_mudline [rad],v_toe [m],psi_toe [rad],iterations,converged
+1,1.0000,4.086672e+05,3.575838e+07,8.747919e-04,-1.442817e-19,1.890627e-19,3.236170e-20,9.166785e-05,2.014947e-20,8.747919e-04,9.166785e-05,-8.757601e-05,5.701174e-06,7,True

@@ -1,0 +1,2 @@
+z_top, z_bot, soil_type, gamma_eff, phi, su, eps50, J, k, dr, g0, hb_B, e0, nu, es_ref, lambda_es, g0_ref, lambda_g0
+0, 60, sand, 10.31, 40, , , , , , , , , 0.2, 70, 0.5, 106.3, 0.5

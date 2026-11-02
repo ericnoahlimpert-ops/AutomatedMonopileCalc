@@ -1,0 +1,27 @@
+08:51:29  Start: 1 calculation(s) (pile x soil x spring model), input folder Inputs\Verification\Tott-Buswell_Verification\Blessington_UP1
+08:51:29  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: started
+08:51:29  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: model built (90 elements), 20 load levels, force control, H up to 0.25 MN
+08:51:30  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: one job for all 20 load levels (springs independent of the load level) started
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 1/20 done: H = 0.0125 MN, mudline displacement 0.49 mm, rotation 0.027 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 2/20 done: H = 0.025 MN, mudline displacement 1.17 mm, rotation 0.060 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 3/20 done: H = 0.0375 MN, mudline displacement 1.96 mm, rotation 0.097 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 4/20 done: H = 0.05 MN, mudline displacement 2.84 mm, rotation 0.136 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 5/20 done: H = 0.0625 MN, mudline displacement 3.79 mm, rotation 0.177 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 6/20 done: H = 0.075 MN, mudline displacement 4.79 mm, rotation 0.219 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 7/20 done: H = 0.0875 MN, mudline displacement 5.85 mm, rotation 0.263 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 8/20 done: H = 0.1 MN, mudline displacement 6.96 mm, rotation 0.308 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 9/20 done: H = 0.1125 MN, mudline displacement 8.11 mm, rotation 0.355 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 10/20 done: H = 0.125 MN, mudline displacement 9.29 mm, rotation 0.402 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 11/20 done: H = 0.1375 MN, mudline displacement 10.52 mm, rotation 0.450 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 12/20 done: H = 0.15 MN, mudline displacement 11.78 mm, rotation 0.499 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 13/20 done: H = 0.1625 MN, mudline displacement 13.07 mm, rotation 0.548 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 14/20 done: H = 0.175 MN, mudline displacement 14.39 mm, rotation 0.599 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 15/20 done: H = 0.1875 MN, mudline displacement 15.73 mm, rotation 0.650 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 16/20 done: H = 0.2 MN, mudline displacement 17.10 mm, rotation 0.701 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 17/20 done: H = 0.2125 MN, mudline displacement 18.50 mm, rotation 0.753 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 18/20 done: H = 0.225 MN, mudline displacement 19.92 mm, rotation 0.806 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 19/20 done: H = 0.2375 MN, mudline displacement 21.37 mm, rotation 0.859 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: load level 20/20 done: H = 0.25 MN, mudline displacement 22.83 mm, rotation 0.913 deg
+08:51:35  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: job finished after 0:00:04
+08:51:36  [1/1] pile_UP1/soil_blessington_upper/Tott-Buswell: FINISHED (ok) after 0:00:07, results in results\verification\Tott-Buswell_Verification\Blessington_UP1\pile_UP1\soil_blessington_upper\Tott-Buswell
+08:51:36  All calculations finished after 0:00:07: 1 ok, 0 with problems

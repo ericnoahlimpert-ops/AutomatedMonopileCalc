@@ -1,0 +1,6 @@
+14:33:17  Start: 1 calculation(s) (pile x soil x spring model)
+14:33:17  [1/1] pile_pisa_C4/soil_pisa_dr75/PISA_Sand: started
+14:33:17  [1/1] pile_pisa_C4/soil_pisa_dr75/PISA_Sand: model built (120 elements), 1 load levels, displacement control, mudline displacement up to 0.001 m
+14:33:52  [1/1] pile_pisa_C4/soil_pisa_dr75/PISA_Sand: load level 1/1 done: H = 0.7553 MN, mudline displacement 1.00 mm, rotation 0.006 deg, 7 iterations (0:00:35)
+14:33:54  [1/1] pile_pisa_C4/soil_pisa_dr75/PISA_Sand: FINISHED (ok) after 0:00:37, results in results\verification\PISA_Verification\C4_small_displacement\pile_pisa_C4\soil_pisa_dr75\PISA_Sand
+14:33:54  All calculations finished after 0:00:37: 1 ok, 0 with problems

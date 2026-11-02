@@ -1,5 +1,8 @@
+# Python
 __pycache__/
 *.pyc
+
+# Abaqus job and model files (large binaries, can be recreated by a run)
 _work/
 *.odb
 *.cae

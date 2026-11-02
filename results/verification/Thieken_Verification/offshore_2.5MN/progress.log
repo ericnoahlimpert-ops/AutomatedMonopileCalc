@@ -1,0 +1,10 @@
+13:50:19  Start: 1 calculation(s) (pile x soil x spring model)
+13:50:19  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: started
+13:50:19  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: model built (60 elements), 5 load levels, force control, H up to 2.5 MN
+13:50:41  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 1/5 done: H = 0.5 MN, mudline displacement 2.36 mm, rotation 0.017 deg, 6 iterations (0:00:22)
+13:50:55  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 2/5 done: H = 1 MN, mudline displacement 5.34 mm, rotation 0.037 deg, 4 iterations (0:00:14)
+13:51:09  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 3/5 done: H = 1.5 MN, mudline displacement 8.69 mm, rotation 0.058 deg, 4 iterations (0:00:14)
+13:51:23  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 4/5 done: H = 2 MN, mudline displacement 12.33 mm, rotation 0.079 deg, 4 iterations (0:00:14)
+13:51:37  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 5/5 done: H = 2.5 MN, mudline displacement 16.21 mm, rotation 0.102 deg, 4 iterations (0:00:14)
+13:51:39  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: FINISHED (ok) after 0:01:20, results in results\verification\Thieken_Verification\offshore_2.5MN\pile_thieken_ref\soil_thieken_ref\Thieken
+13:51:39  All calculations finished after 0:01:20: 1 ok, 0 with problems

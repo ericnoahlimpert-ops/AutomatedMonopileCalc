@@ -1,0 +1,15 @@
+13:47:41  Start: 1 calculation(s) (pile x soil x spring model)
+13:47:41  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: started
+13:47:41  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: model built (60 elements), 10 load levels, force control, H up to 30 MN
+13:48:03  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 1/10 done: H = 3 MN, mudline displacement 20.32 mm, rotation 0.125 deg, 6 iterations (0:00:21)
+13:48:17  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 2/10 done: H = 6 MN, mudline displacement 48.97 mm, rotation 0.275 deg, 4 iterations (0:00:14)
+13:48:31  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 3/10 done: H = 9 MN, mudline displacement 83.74 mm, rotation 0.442 deg, 4 iterations (0:00:14)
+13:48:45  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 4/10 done: H = 12 MN, mudline displacement 124.29 mm, rotation 0.626 deg, 4 iterations (0:00:15)
+13:49:00  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 5/10 done: H = 15 MN, mudline displacement 170.58 mm, rotation 0.825 deg, 4 iterations (0:00:15)
+13:49:15  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 6/10 done: H = 18 MN, mudline displacement 222.64 mm, rotation 1.039 deg, 4 iterations (0:00:14)
+13:49:29  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 7/10 done: H = 21 MN, mudline displacement 280.71 mm, rotation 1.269 deg, 4 iterations (0:00:15)
+13:49:44  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 8/10 done: H = 24 MN, mudline displacement 345.02 mm, rotation 1.516 deg, 4 iterations (0:00:15)
+13:49:59  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 9/10 done: H = 27 MN, mudline displacement 416.10 mm, rotation 1.780 deg, 4 iterations (0:00:15)
+13:50:15  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: load level 10/10 done: H = 30 MN, mudline displacement 494.10 mm, rotation 2.062 deg, 4 iterations (0:00:15)
+13:50:16  [1/1] pile_thieken_ref/soil_thieken_ref/Thieken: FINISHED (ok) after 0:02:35, results in results\verification\Thieken_Verification\offshore_30MN\pile_thieken_ref\soil_thieken_ref\Thieken
+13:50:16  All calculations finished after 0:02:35: 1 ok, 0 with problems

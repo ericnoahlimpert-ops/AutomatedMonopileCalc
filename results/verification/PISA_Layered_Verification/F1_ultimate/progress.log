@@ -1,0 +1,10 @@
+10:02:29  Start: 1 calculation(s) (pile x soil x spring model), input folder Inputs\Verification\PISA_Layered_Verification\F1_ultimate
+10:02:29  [1/1] pile_pisa_C1t/soil_F1/PISA: started
+10:02:29  [1/1] pile_pisa_C1t/soil_F1/PISA: model built (40 elements), 5 load levels, displacement control, mudline displacement up to 1 m
+10:03:47  [1/1] pile_pisa_C1t/soil_F1/PISA: load level 1/5 done: H = 9.31 MN, mudline displacement 200.02 mm, rotation 0.830 deg, 11 iterations (0:01:17)
+10:04:43  [1/1] pile_pisa_C1t/soil_F1/PISA: load level 2/5 done: H = 11.31 MN, mudline displacement 400.15 mm, rotation 1.672 deg, 10 iterations (0:00:57)
+10:05:31  [1/1] pile_pisa_C1t/soil_F1/PISA: load level 3/5 done: H = 12.33 MN, mudline displacement 599.50 mm, rotation 2.523 deg, 12 iterations (0:00:48)
+10:05:58  [1/1] pile_pisa_C1t/soil_F1/PISA: load level 4/5 done: H = 12.94 MN, mudline displacement 800.39 mm, rotation 3.387 deg, 7 iterations (0:00:27)
+10:06:26  [1/1] pile_pisa_C1t/soil_F1/PISA: load level 5/5 done: H = 13.33 MN, mudline displacement 1000.23 mm, rotation 4.247 deg, 7 iterations (0:00:28)
+10:06:28  [1/1] pile_pisa_C1t/soil_F1/PISA: FINISHED (ok) after 0:03:58, results in results\verification\PISA_Layered_Verification\F1_ultimate\pile_pisa_C1t\soil_F1\PISA
+10:06:28  All calculations finished after 0:03:58: 1 ok, 0 with problems

@@ -1,0 +1,10 @@
+09:36:55  Start: 1 calculation(s) (pile x soil x spring model), input folder Inputs\Verification\PISA_Clay_Verification\C4_ultimate
+09:36:55  [1/1] pile_pisa_C4/soil_cowden_till/PISA_Clay: started
+09:36:55  [1/1] pile_pisa_C4/soil_cowden_till/PISA_Clay: model built (120 elements), 5 load levels, displacement control, mudline displacement up to 1 m
+09:37:33  [1/1] pile_pisa_C4/soil_cowden_till/PISA_Clay: load level 1/5 done: H = 44.7 MN, mudline displacement 200.00 mm, rotation 0.675 deg, 6 iterations (0:00:38)
+09:38:03  [1/1] pile_pisa_C4/soil_cowden_till/PISA_Clay: load level 2/5 done: H = 67.5 MN, mudline displacement 399.80 mm, rotation 1.180 deg, 5 iterations (0:00:31)
+09:38:45  [1/1] pile_pisa_C4/soil_cowden_till/PISA_Clay: load level 3/5 done: H = 83.3 MN, mudline displacement 599.99 mm, rotation 1.615 deg, 5 iterations (0:00:42)
+09:39:23  [1/1] pile_pisa_C4/soil_cowden_till/PISA_Clay: load level 4/5 done: H = 94.37 MN, mudline displacement 799.97 mm, rotation 1.999 deg, 5 iterations (0:00:38)
+09:39:54  [1/1] pile_pisa_C4/soil_cowden_till/PISA_Clay: load level 5/5 done: H = 102.2 MN, mudline displacement 1000.24 mm, rotation 2.347 deg, 5 iterations (0:00:31)
+09:39:57  [1/1] pile_pisa_C4/soil_cowden_till/PISA_Clay: FINISHED (ok) after 0:03:02, results in results\verification\PISA_Clay_Verification\C4_ultimate\pile_pisa_C4\soil_cowden_till\PISA_Clay
+09:39:57  All calculations finished after 0:03:02: 1 ok, 0 with problems

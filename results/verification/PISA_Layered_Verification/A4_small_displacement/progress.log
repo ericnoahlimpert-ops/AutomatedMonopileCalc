@@ -1,0 +1,6 @@
+09:29:59  Start: 1 calculation(s) (pile x soil x spring model), input folder Inputs\Verification\PISA_Layered_Verification\A4_small_displacement
+09:29:59  [1/1] pile_pisa_D2t/soil_A4/PISA: started
+09:29:59  [1/1] pile_pisa_D2t/soil_A4/PISA: model built (70 elements), 1 load levels, displacement control, mudline displacement up to 0.000875 m
+09:30:28  [1/1] pile_pisa_D2t/soil_A4/PISA: load level 1/1 done: H = 0.4025 MN, mudline displacement 0.87 mm, rotation 0.005 deg, 7 iterations (0:00:29)
+09:30:29  [1/1] pile_pisa_D2t/soil_A4/PISA: FINISHED (ok) after 0:00:30, results in results\verification\PISA_Layered_Verification\A4_small_displacement\pile_pisa_D2t\soil_A4\PISA
+09:30:29  All calculations finished after 0:00:30: 1 ok, 0 with problems

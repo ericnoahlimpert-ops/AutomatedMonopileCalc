@@ -1,0 +1,2 @@
+z_top, z_bot, diameter, thickness, material
+0, 3, 0.51, 0.01, PISA_STEEL

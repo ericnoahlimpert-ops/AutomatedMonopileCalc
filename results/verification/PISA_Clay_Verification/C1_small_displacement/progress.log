@@ -1,0 +1,6 @@
+09:29:31  Start: 1 calculation(s) (pile x soil x spring model), input folder Inputs\Verification\PISA_Clay_Verification\C1_small_displacement
+09:29:31  [1/1] pile_pisa_C1/soil_cowden_till/PISA_Clay: started
+09:29:31  [1/1] pile_pisa_C1/soil_cowden_till/PISA_Clay: model built (40 elements), 1 load levels, displacement control, mudline displacement up to 0.001 m
+09:29:41  [1/1] pile_pisa_C1/soil_cowden_till/PISA_Clay: load level 1/1 done: H = 0.7203 MN, mudline displacement 1.00 mm, rotation 0.006 deg, 3 iterations (0:00:11)
+09:29:43  [1/1] pile_pisa_C1/soil_cowden_till/PISA_Clay: FINISHED (ok) after 0:00:12, results in results\verification\PISA_Clay_Verification\C1_small_displacement\pile_pisa_C1\soil_cowden_till\PISA_Clay
+09:29:43  All calculations finished after 0:00:12: 1 ok, 0 with problems

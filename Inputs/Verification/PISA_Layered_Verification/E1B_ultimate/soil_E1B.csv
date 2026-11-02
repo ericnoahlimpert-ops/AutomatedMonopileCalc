@@ -1,0 +1,4 @@
+z_top, z_bot, soil_type, gamma_eff, phi, su, eps50, J, k, dr, g0, hb_B, e0, nu, es_ref, lambda_es, g0_ref, lambda_g0, pisa_clay
+0, 8.75, sand, 10.09, , , , , , 55, , 875, 0.7037, , , , , ,
+8.75, 30.625, sand, 10.09, , , , , , 70, , 875, 0.6477, , , , , ,
+30.625, 100, sand, 10.09, , , , , , 85, , 875, 0.5917, , , , , ,

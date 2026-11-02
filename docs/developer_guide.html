@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Developer guide - Automated Monopile Calculation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<div class="brand">Automated Monopile Calculation</div>
+<nav><a href="../Documentation.html">Overview</a><a href="user_guide.html">User guide</a><a href="spring_models.html">Spring models</a><a href="calculation_method.html">Calculation method</a><a href="verification.html">Verification</a><a href="developer_guide.html" class="active">Developer guide</a></nav>
+</header>
+<main>
+<h1 id="developer-guide">Developer guide</h1>
+<p>For extending or maintaining the code. How the calculation works is described in <a href="calculation_method.html">Calculation method</a>.</p>
+<p>Contents</p>
+<ol><li><a href="#1-code-structure">Code structure</a></li><li><a href="#2-data-flow-of-a-case">Data flow of a case</a></li><li><a href="#3-conventions">Conventions</a></li><li><a href="#4-adding-a-spring-model">Adding a spring model</a></li><li><a href="#5-extending-the-output">Extending the output</a></li><li><a href="#6-abaqus-pitfalls">Abaqus pitfalls</a></li><li><a href="#7-testing">Testing</a></li></ol>
+<hr>
+<h2 id="1-code-structure">1. Code structure</h2>
+<div class="table-wrap"><table><thead><tr><th>Module</th><th>Responsibility</th><th>Needs Abaqus</th></tr></thead><tbody><tr><td><code>main.py</code></td><td>entry point: loads the settings of the input folder, cases, folders, job names, progress, summary</td><td>CAE</td></tr><tr><td><code>Inputs/**/Input.py</code>, <code>AdvancedSettings.py</code></td><td>settings of an input folder (loaded anew on every run with <code>importlib.util</code>)</td><td>–</td></tr><tr><td><code>methods/csv_reader.py</code></td><td><code>PileSection</code>, <code>SoilLayer</code>, <code>CptProfile</code>, reading and validation</td><td>–</td></tr><tr><td><code>methods/geometry.py</code></td><td>mesh (<code>fixed_node_depths</code>, <code>split_into_node_depths</code>), <code>PileGeometryBuilder</code></td><td>CAE</td></tr><tr><td><code>methods/connectors.py</code></td><td>soil springs as connector sections</td><td>CAE</td></tr><tr><td><code>methods/analysis.py</code></td><td>BCs, step, load, job, reading the odb</td><td>CAE / odbAccess</td></tr><tr><td><code>methods/solver.py</code></td><td><code>IncrementalSolver</code> (force/displacement control, iteration, relaxation), <code>BreakCriteria</code></td><td>CAE</td></tr><tr><td><code>methods/postprocessing.py</code></td><td><code>read_pile_profile</code>, CSV output</td><td>odbAccess</td></tr><tr><td><code>methods/plots.py</code></td><td>PNG plots (matplotlib, Agg backend)</td><td>–</td></tr><tr><td><code>methods/progress.py</code></td><td><code>ProgressLog</code></td><td>–</td></tr><tr><td><code>methods/spring_models/base.py</code></td><td><code>SpringModel</code>, curves, <code>ClayPY</code> (Matlock), G0 functions, helpers</td><td>–</td></tr><tr><td><code>methods/spring_models/*.py</code></td><td>one module per spring model</td><td>–</td></tr><tr><td><code>run_abaqus.ps1</code></td><td>starts Abaqus, shows the progress log</td><td>–</td></tr></tbody></table></div>
+<p>The spring models, CSV reading, mesh functions and plots do not import Abaqus and can be tested with plain Python.</p>
+<h2 id="2-data-flow-of-a-case">2. Data flow of a case</h2>
+<pre class="code"><code>run_abaqus.bat [folder] ──► run_abaqus.ps1 ──► MONOPILE_INPUT_DIR
+                                                 │
+&lt;input folder&gt;/Input.py, AdvancedSettings.py ──► load_settings()
+                                                 │
+Input.py ──► build_cases() ──► Case (name, folder, job name)
+                                  │
+pile.csv ──► read_pile_csv ───────┤
+soil.csv ──► read_soil_csv ───────┤
+cpt.csv  ──► read_cpt_csv ────────┤ (TOTT_BUSWELL)
+                                  ▼
+                   PileGeometryBuilder (nodes at section/layer boundaries)
+                                  │
+                   create_spring_model ──► SpringModel
+                                  │
+                   IncrementalSolver.run / run_displacement
+                     per level: SpringModel.compute(nodes, state) ──► SpringSet
+                                create_soil_connectors ──► run_job
+                                read_node_results ──► residual / relaxation
+                                BreakCriteria.check
+                                  │
+                   LoadLevelResult list, break_info, spring_set
+                                  ▼
+          write_pile_head_csv, read_pile_profile, write_pile_profile_csv,
+          plots, case_summary ──► summary.csv</code></pre>
+<h2 id="3-conventions">3. Conventions</h2>
+<ul><li><strong>Units:</strong> inside Abaqus SI (N, m). Spring model curves work in kN, m, kPa and are converted to N by <code>curve_contribution</code> (factor 1000). Soil inputs: kN/m³, kPa, MPa (converted to kPa when read), degrees.</li><li><strong>Depths:</strong> pile files: below the pile head; soil files and spring models: below the mudline (<code>z_soil</code>); Abaqus Z = −depth.</li><li><strong>Signs:</strong> see <a href="calculation_method.html#9-sign-conventions">Calculation method</a>. Spring curves are defined for x ≥ 0 and mirrored.</li><li><strong>Style:</strong> PEP 8, 79 characters per line, docstrings for every module, class and public function. Every spring model documents its soil.csv parameters in a "Soil parameters (soil.csv)" section of its module docstring.</li><li><strong>Errors:</strong> invalid input raises <code>ValueError</code> with a message naming the file, line or setting; <code>main.py</code> reports it per case and continues.</li></ul>
+<h2 id="4-adding-a-spring-model">4. Adding a spring model</h2>
+<ol><li>Create <code>methods/spring_models/&lt;name&gt;.py</code> with a subclass of <code>SpringModel</code> (or of an existing model, e.g. <code>ApiPyModel</code> with another <code>sand_curve</code>, as in <code>kallehave.py</code>, or of <code>PisaModel</code> (<code>pisa.py</code>) for another PISA calibration, as in <code>pisa_clay.py</code>):
+<pre class="code python"><code>from .base import SpringModel, curve_contribution, missing_parameters
+
+class MyModel(SpringModel):
+    name = &quot;MY_MODEL&quot;         # key in SPRING_MODEL (Input.py)
+    label = &quot;MyModel&quot;         # results folder name
+    iterative = False         # True if the curves depend on (v, psi)
+    has_rotational_springs = False
+
+    def __init__(self, pile_sections, soil_layers, mudline_depth, **_):
+        super(MyModel, self).__init__(pile_sections, soil_layers,
+                                      mudline_depth)
+        errors = missing_parameters(soil_layers, (&quot;phi&quot;,))
+        if errors:
+            raise ValueError(&quot;MY_MODEL: soil parameters in soil.csv &quot;
+                             &quot;(%s).&quot; % &quot;; &quot;.join(errors))
+
+    def distributed_springs(self, point, node_result):
+        if point.layer.soil_type != &quot;sand&quot;:
+            return self.clay_fallback(point)
+        curve = ...               # object with p(y) [kN/m], y in m
+        return curve_contribution(curve, point.length, x_max), None</code></pre></li><li><code>distributed_springs(point, node_result)</code> returns <code>(lateral, rotational)</code> <code>Contribution</code>s (or <code>None</code>) for one half element. <code>point</code> (<code>SoilPoint</code>) holds <code>z_soil</code>, <code>layer</code>, <code>sigma_v</code>, <code>diameter</code>, <code>thickness</code>, <code>length</code>; <code>node_result</code> is (v, ψ) of the node from the previous run (<code>None</code> in the first run).</li><li>Optional hooks: <code>base_springs(point, node_result)</code> (pile tip), <code>prepare(nodes, node_results)</code> (e.g. evaluate the whole deflection line, see Thieken), <code>output_columns</code> + <code>node_output(z_soil, diameter)</code> for extra columns in pile_profile.csv.</li><li>Register the class in <code>SPRING_MODELS</code> in <code>methods/spring_models/__init__.py</code>.</li><li>Add a column block to <code>Inputs/Input.py</code> and to <code>MODEL_COLUMNS</code> (and to the <code>Input.py</code> of other input folders that should use the model). New soil parameters also need an entry in <code>SOIL_OPTIONAL_COLUMNS</code> and <code>SoilLayer</code> in <code>csv_reader.py</code>.</li><li>Document the model in <code>docs/spring_models.html</code> and verify it against a published case.</li></ol>
+<p>Shared helpers in <code>base.py</code>: <code>curve_contribution</code>, <code>matlock_contribution</code>, <code>SpringModel.clay_fallback</code>, <code>missing_parameters</code>, <code>small_strain_modulus</code>, <code>check_g0_inputs</code>, <code>mean_stress</code>.</p>
+<h2 id="5-extending-the-output">5. Extending the output</h2>
+<ul><li>Per load level: <code>LoadLevelResult</code> (<code>solver.py</code>) and <code>write_pile_head_csv</code>.</li><li>Per node: <code>ProfileRow</code> / <code>read_pile_profile</code> (<code>postprocessing.py</code>), or a spring model's <code>node_output</code>.</li><li>Per case: <code>case_summary</code> (<code>main.py</code>) and the column list in <code>write_summary_csv</code>.</li><li>Plots: <code>methods/plots.py</code>, called through <code>make_plot</code> in <code>main.py</code> (errors only produce a warning).</li><li>Progress messages: the <code>report</code> function passed to <code>run_case</code> and the solver.</li></ul>
+<h2 id="6-abaqus-pitfalls">6. Abaqus pitfalls</h2>
+<div class="table-wrap"><table><thead><tr><th>Pitfall</th><th>Handling</th></tr></thead><tbody><tr><td>Abaqus/CAE replaces <code>sum()</code> in the namespace of <code>main.py</code> by a version that does not accept generators</td><td>use <code>len([...])</code> or lists in <code>main.py</code>; modules in <code>methods/</code> are not affected</td></tr><tr><td><code>print</code> output of CAE is not shown live in the console</td><td><code>ProgressLog</code> writes a file that <code>run_abaqus.ps1</code> displays</td></tr><tr><td>Job names: at most 80 characters; letters, digits and <code>_</code> only</td><td><code>job_name()</code> in <code>main.py</code></td></tr><tr><td>Windows paths ≤ 260 characters (job files in <code>_work</code>)</td><td>checked in <code>OutputFiles.prepare()</code></td></tr><tr><td>An open CAE session keeps imported modules</td><td><code>Input</code> and <code>AdvancedSettings</code> are loaded from file on every run (<code>load_settings</code>); after changes in <code>methods/</code>, restart Abaqus/CAE</td></tr><tr><td>Arguments cannot be passed easily to <code>abaqus cae noGUI=main.py</code></td><td>the input folder is passed in the environment variable <code>MONOPILE_INPUT_DIR</code></td></tr><tr><td>Files open in another CAE window cannot be deleted</td><td><code>prepare()</code> skips them; copying the new odb may then fail</td></tr><tr><td><code>TimePoint</code> names must be unique</td><td><code>set_output_time_points</code> deletes an existing one</td></tr><tr><td>Nonlinear connector elasticity needs a table sorted by displacement, through 0</td><td><code>ReactionCurve.symmetric_table()</code></td></tr></tbody></table></div>
+<h2 id="7-testing">7. Testing</h2>
+<ul><li><p><strong>Plain Python</strong> (no Abaqus): spring models, CSV reading, mesh functions, break criteria and plots can be tested directly, e.g.</p>
+<pre class="code python"><code>from methods.csv_reader import SoilLayer, PileSection
+from methods.spring_models import create_spring_model
+m = create_spring_model(&quot;THIEKEN&quot;, [PileSection(0, 30, 5, 0.069, &quot;S355&quot;)],
+                        [SoilLayer(0, 60, &quot;sand&quot;, 10.31, phi=40, nu=0.2,
+                                   es_ref=70, lambda_es=0.5,
+                                   g0_ref=106.3, lambda_g0=0.5)], 0.0)
+springs = m.compute([(i + 1, 0.5 * i) for i in range(61)])</code></pre>
+<p>Modules that import Abaqus (<code>solver.py</code>, <code>postprocessing.py</code>, …) can be imported after inserting dummy modules for <code>abaqus</code>, <code>abaqusConstants</code>, <code>odbAccess</code> etc. into <code>sys.modules</code>.</p></li><li><strong>Abaqus Python</strong> (<code>abaqus python script.py</code>): odb evaluation (<code>read_pile_profile</code>) on existing results.</li><li><strong>Full runs:</strong> the verification input folders in <code>Inputs/Verification/</code> (about 0.5–4 minutes each), see <a href="verification.html">Verification</a>. After changes to the solver or a spring model, repeat them and compare with the tables of the verification page.</li></ul>
+</main>
+<footer>Automated Monopile Calculation &middot; documentation</footer>
+</body>
+</html>

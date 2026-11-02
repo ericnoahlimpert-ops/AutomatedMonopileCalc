@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spring models - Automated Monopile Calculation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<div class="brand">Automated Monopile Calculation</div>
+<nav><a href="../Documentation.html">Overview</a><a href="user_guide.html">User guide</a><a href="spring_models.html" class="active">Spring models</a><a href="calculation_method.html">Calculation method</a><a href="verification.html">Verification</a><a href="developer_guide.html">Developer guide</a></nav>
+</header>
+<main>
+<h1 id="spring-models">Spring models</h1>
+<p>Every spring model describes the soil reaction at a depth along the pile as a function of the local pile displacement v (and, for PISA and Tott-Buswell, the rotation ψ or θ). How these curves are turned into node springs is described in <a href="calculation_method.html#3-soil-springs">Calculation method</a>. The models are in <code>methods/spring_models/</code>.</p>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Module</th><th>Iterative</th><th>Springs</th><th>Clay layers</th></tr></thead><tbody><tr><td>API</td><td><code>api.py</code></td><td>no</td><td>lateral</td><td>Matlock</td></tr><tr><td>KALLEHAVE</td><td><code>kallehave.py</code></td><td>no</td><td>lateral</td><td>Matlock</td></tr><tr><td>SORENSEN</td><td><code>sorensen.py</code></td><td>no</td><td>lateral</td><td>Matlock</td></tr><tr><td>THIEKEN</td><td><code>thieken.py</code></td><td>yes</td><td>lateral</td><td>Matlock (warning)</td></tr><tr><td>PISA_SAND</td><td><code>pisa.py</code></td><td>yes</td><td>lateral, distributed moment, base shear, base moment</td><td>Matlock, lateral only (warning)</td></tr><tr><td>PISA_CLAY</td><td><code>pisa_clay.py</code></td><td>no</td><td>lateral, distributed moment, base shear, base moment</td><td>model for clay (sand layers: error)</td></tr><tr><td>PISA</td><td><code>pisa_layered.py</code></td><td>if sand layers</td><td>lateral, distributed moment, base shear, base moment</td><td>layered sand/clay: per layer</td></tr><tr><td>TOTT_BUSWELL</td><td><code>tott_buswell.py</code></td><td>no</td><td>lateral, distributed moment, base shear, base moment</td><td>Matlock, lateral only (warning)</td></tr></tbody></table></div>
+<p>Notation: z depth below mudline, D pile diameter, σ'_v vertical effective stress (integrated from <code>gamma_eff</code> of all layers above), y or v lateral displacement. Units in the formulas: kN, m, kPa.</p>
+<p>Layered soil: every half element is evaluated with the layer at its mid-depth; z is always measured from the mudline (not from the top of the layer), and γ'·z of single-layer formulas is replaced by σ'_v.</p>
+<hr>
+<h2 id="1-api-sand--api">1. API (sand) — <code>API</code></h2>
+<p>API RP 2GEO / RP 2A, hyperbolic tangent curve (Murchison &amp; O'Neill 1984):</p>
+<pre class="formula">p = A · p_u · tanh( k·z · y / (A · p_u) )
+
+p_u = min( (C1·z + C2·D)·σ&#x27;_v ,  C3·D·σ&#x27;_v )
+A   = max(3.0 − 0.8·z/D, 0.9)   static
+A   = 0.9                        cyclic</pre>
+<p>C1, C2, C3 follow from φ with the API formulas (α = φ/2, β = 45° + φ/2, K0 = 0.4, Ka = tan²(45° − φ/2)).</p>
+<p>The initial modulus of subgrade reaction k is taken from soil.csv (<code>k</code> [MN/m³]) or, if empty, interpolated linearly from the API chart for submerged sand: 5.4 / 16.3 / 33.9 MN/m³ at φ = 29 / 33 / 36° (constant outside). This is a coarse fit; Thieken et al. (2015) use k = 0.008085·φ^2.45 − 26.09 MN/m³ (Augustesen et al. 2009), which gives e.g. 41.9 MN/m³ at φ = 40°. Give <code>k</code> explicitly when a better value is known.</p>
+<p>Parameters: <code>gamma_eff</code>, <code>phi</code> (required), <code>k</code> (optional).</p>
+<h2 id="2-matlock-clay--all-models">2. Matlock (clay) — all models</h2>
+<p>Matlock (1970) soft clay, used for every clay layer by every model (<code>ClayPY</code> in <code>base.py</code>):</p>
+<pre class="formula">p_u = min(3·s_u + σ&#x27;_v + J·s_u·z/D , 9·s_u) · D
+y_c = 2.5 · ε50 · D
+
+static:  p/p_u = 0.5·(y/y_c)^(1/3)  up to y = 8·y_c, then 1.0
+cyclic:  as static up to 3·y_c (p/p_u = 0.72); beyond that 0.72 for
+         z ≥ X_R, otherwise linear decrease to 0.72·z/X_R at 15·y_c
+X_R = 6·D / (γ&#x27;·D/s_u + J)</pre>
+<p>Parameters: <code>gamma_eff</code>, <code>su</code> (<code>top-bottom</code> for a linear variation), <code>eps50</code> (default 0.01), <code>J</code> (default 0.5).</p>
+<p>PISA and Thieken are formulated for sand only; their clay layers use these curves (lateral springs only) with a warning.</p>
+<h2 id="3-kallehave-et-al-2012--kallehave">3. Kallehave et al. (2012) — <code>KALLEHAVE</code></h2>
+<p>API sand curve with a modified initial slope (eq. 7 in Thieken et al. 2015):</p>
+<pre class="formula">E_py = k · z0 · (z/z0)^m · (D/D0)^0.5
+z0 = 2.5 m,  D0 = 0.61 m,  m = 0.6</pre>
+<p>k as for API. Derived from measured stiffnesses of operating monopiles under small loads; stiffer than API for large diameters. According to Thieken et al. (2015) only valid for small head displacements (&lt; 0.0005·D).</p>
+<p>Parameters: as API.</p>
+<h2 id="4-sørensen-et-al-2010--sorensen">4. Sørensen et al. (2010) — <code>SORENSEN</code></h2>
+<p>API sand curve with a modified initial slope (eq. 5 in Thieken et al. 2015):</p>
+<pre class="formula">E_py = a · (z/z_ref)^b · (D/D_ref)^c · φ^d
+a = 50 MPa, b = 0.6, c = 0.5, d = 3.6, z_ref = D_ref = 1 m, φ in radians</pre>
+<p>Softer than API for large diameters. Note: the 2012 version of Sørensen's formulation (with E_s instead of φ), which Thieken et al. (2015) evaluate in their figures, is <strong>not</strong> implemented.</p>
+<p>Parameters: <code>gamma_eff</code>, <code>phi</code>.</p>
+<h2 id="5-thieken-et-al-2015--thieken">5. Thieken et al. (2015) — <code>THIEKEN</code></h2>
+<p>Thieken, K., Achmus, M., Lemke, K. (2015). A new static p-y approach for piles with arbitrary dimensions in sand. geotechnik 38(4), 267–288.</p>
+<p><strong>Ultimate resistance</strong> (DIN 4085, eqs. 17–19, 29), δ_p = −2/3·φ (angles in rad):</p>
+<pre class="formula">K_pgh = (1+sin φ)/(1−sin φ) · (1 − 0.53·δ_p)^(0.26 + 5.96·φ) / sqrt(1 + tan²δ_p)
+p_C,basic = 11/16 · σ&#x27;_v · sqrt(z) · K_pgh · (1 + 2·tan φ) · sqrt(D)
+p_C = p_C,basic · max(3 − 2·(z/(2.5·D))^0.25 , 1)</pre>
+<p><strong>Basic curve</strong> with stretching factor SF (eqs. 20–28):</p>
+<pre class="formula">y_B = p_C/(E_s·SF),  y_C = 4·y_B,  y_A = 0.005·D·y_B,  p_B = R_B·p_C
+R_B = max(0.63 − 0.33·(z/D / 7.5)^0.5 , 0.35)
+y ≤ y_B:       p = p_B·(y/y_B)^(1/n) ≤ E0_py·y
+y_B &lt; y &lt; y_C: linear from p_B to p_C
+y ≥ y_C:       p = p_C
+n  = n_A for y ≥ y_A,  n0 + (n_A − n0)·(y/y_A)^0.25 for y &lt; y_A
+n_A = 2.4 − 0.08·(φ[°] − 30)
+n0  = log(10⁻⁵·D / y_B) / log(E0_py·10⁻⁵·D / p_B)
+E0_py = G0 · 2(1−ν²)/(1−ν−2ν²) · SF</pre>
+<p>The text of the paper gives y_A = 0.005·p_C/(E_s·SF), Fig. 14 an additional factor D; the Fig. 14 version is used.</p>
+<p><strong>Soil stiffness</strong> (σ_m = σ'_v (1+2k0)/3, k0 = 1 − sin φ):</p>
+<pre class="formula">E_s = es_ref · (σ_m / 100 kPa)^λ_ES         (paper: es_ref = κ · 100 kPa)
+G0  from g0 / g0_ref + λ_G0 / Hardin &amp; Black (see user guide)
+                                             (paper: G0 = 6900·(2.17−e)²/(1+e)·σ_m^0.5)</pre>
+<p><strong>Stretching factor</strong> SF = SF_bend + SF_tip from the deflection line of the previous run (eqs. 30–35; L embedded length, z_y0 rotation point, z_ymin depth of the largest backward deflection):</p>
+<pre class="formula">z ≤ z_y0:           SF_bend = 2.3·y/y_max + 0.3
+z_y0 &lt; z ≤ z_ymin:  SF_bend = 1.2·y/y_min + 0.3
+z &gt; z_ymin:         SF_bend = max(1.2·y/y_min + 0.3 , 1.0)
+z ≥ L − 2D:         SF_tip  = 5·((z−L)/(2D) + 1)^5
+z ≥ L − 0.1D:       SF_tip  = 5·((z−L)/(2D) + 1)^5 + 3</pre>
+<p>The first run of a load level without prediction uses SF = 1 (basic curves); the model is then iterated until the deflection line no longer changes. The stretching factors at every node are written to <code>pile_profile.csv</code> (<code>SF_bend</code>, <code>SF_tip</code>, <code>SF</code>).</p>
+<p>Parameters: <code>gamma_eff</code>, <code>phi</code>, <code>nu</code>, <code>es_ref</code>, <code>lambda_es</code> and G0 (required, no defaults). Reference values of the paper (Table 1):</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>ν</th><th>E_s,ref [MPa]</th><th>λ_ES</th><th>G0,ref [MPa]</th><th>λ_G0</th><th>φ [°]</th><th>γ' [kN/m³]</th></tr></thead><tbody><tr><td>very dense</td><td>0.200</td><td>70.0</td><td>0.50</td><td>106.3</td><td>0.50</td><td>40.0</td><td>10.31</td></tr><tr><td>dense</td><td>0.225</td><td>50.0</td><td>0.55</td><td>96.6</td><td>0.50</td><td>37.5</td><td>10.00</td></tr><tr><td>medium dense</td><td>0.250</td><td>40.0</td><td>0.60</td><td>89.4</td><td>0.50</td><td>35.0</td><td>9.76</td></tr><tr><td>loose</td><td>0.275</td><td>32.5</td><td>0.65</td><td>81.1</td><td>0.50</td><td>32.5</td><td>9.41</td></tr><tr><td>very loose</td><td>0.300</td><td>25.0</td><td>0.70</td><td>71.9</td><td>0.50</td><td>30.0</td><td>9.10</td></tr></tbody></table></div>
+<p>Validity: derived for homogeneous sand, static loading; layered profiles are evaluated layer by layer (warning).</p>
+<h2 id="6-pisa-sand-model--pisa_sand">6. PISA sand model — <code>PISA_SAND</code></h2>
+<p>Burd, H. J. et al. (2020). PISA design model for monopiles for offshore wind turbines: application to a marine sand. Géotechnique 70(11), 1048–1066.</p>
+<p>Four soil reaction components, each a conic function of a normalised displacement or rotation (eqs. 1–5), with the parameters of the General Dunkirk Sand Model (GDSM, Table 6) as functions of D_R, z/D, z/L and L/D:</p>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>Normalisation</th><th>Spring</th></tr></thead><tbody><tr><td>distributed lateral load p(v)</td><td>p̄ = p/(σ'_v·D), v̄ = v·G0/(D·σ'_v)</td><td>lateral, every node</td></tr><tr><td>distributed moment m(ψ)</td><td>m̄ = m/(|p|·D), ψ̄ = ψ·G0/σ'_v</td><td>rotational, every node</td></tr><tr><td>base shear H_B(v)</td><td>H̄ = H_B/(σ'_v·D²)</td><td>lateral, pile tip</td></tr><tr><td>base moment M_B(ψ)</td><td>M̄ = M_B/(σ'_v·D³)</td><td>rotational, pile tip</td></tr></tbody></table></div>
+<p>Implementation details:</p>
+<ul><li><strong>Diameter:</strong> the PISA papers use one D for the thin-walled section properties (I = π·D³·t/8, A = π·D·t) and in all formulas. This is the mean (mid-surface) diameter: D from pile.csv with <code>DIAMETER_REFERENCE = &quot;mid&quot;</code>, D − t with <code>&quot;outer&quot;</code>. To reproduce the papers, use <code>&quot;mid&quot;</code> with their D (Table 7 within 0.2 %; with their D taken as outer diameter 1.2–1.6 % lower, see <a href="verification.html#12-pile-diameter">Verification</a>).</li><li>The distributed moment depends on the current lateral load p(v) (eq. 6); it is evaluated with v of the previous run, so the model is iterative. The first run without a state uses p_u (upper bound).</li><li>G0 after Hardin &amp; Black (eq. 7) with B = 875 for Dunkirk sand (e0 = 0.741 / 0.685 / 0.629 / 0.573 for D_R = 45 / 60 / 75 / 90 %), or one of the other G0 inputs. k0 = 0.4 without φ (Dunkirk value).</li><li>Calibration space: 45 % ≤ D_R ≤ 90 %, 2 ≤ L/D ≤ 6, 5 ≤ h/D ≤ 15, 5 m ≤ D ≤ 10 m, homogeneous sand, monotonic drained loading. Outside of it, D_R, z/D and L/D are clamped to the limits and a warning is given.</li></ul>
+<p>Parameters: <code>gamma_eff</code>, <code>dr</code>, G0 input, <code>phi</code> (optional).</p>
+<h2 id="7-pisa-clay-model--pisa_clay">7. PISA clay model — <code>PISA_CLAY</code></h2>
+<p>Byrne, B. W. et al. (2020). PISA design model for monopiles for offshore wind turbines: application to a stiff glacial clay till. Géotechnique 70(11), 1030–1047.</p>
+<p>Same four components and conic function as the sand model, normalised with the undrained shear strength s_u and G0 (Table 3):</p>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>Normalisation</th><th>Spring</th></tr></thead><tbody><tr><td>distributed lateral load p(v)</td><td>p̄ = p/(s_u·D), v̄ = v·G0/(s_u·D)</td><td>lateral, every node</td></tr><tr><td>distributed moment m(ψ)</td><td>m̄ = m/(s_u·D²), ψ̄ = ψ·G0/s_u</td><td>rotational, every node</td></tr><tr><td>base shear H_B(v)</td><td>H̄ = H_B/(s_u·D²)</td><td>lateral, pile tip</td></tr><tr><td>base moment M_B(ψ)</td><td>M̄ = M_B/(s_u·D³)</td><td>rotational, pile tip</td></tr></tbody></table></div>
+<p>Two calibrations, selected per layer with the soil.csv column <code>pisa_clay</code>:</p>
+<p><strong><code>cowden</code> (default):</strong> stiff overconsolidated glacial clay till, second-stage calibration (Byrne et al. 2020, Table 4), which the paper recommends for design:</p>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>x̄_u</th><th>k</th><th>n</th><th>ȳ_u</th></tr></thead><tbody><tr><td>p</td><td>241.4</td><td>10.60 − 1.650·z/D</td><td>0.9390 − 0.03345·z/D</td><td>10.70 − 7.101·exp(−0.3085·z/D)</td></tr><tr><td>m</td><td>m̄_u/k_m</td><td>1.420 − 0.09643·z/D</td><td>0</td><td>0.2899 − 0.04775·z/D</td></tr><tr><td>H_B</td><td>235.7</td><td>2.717 − 0.3575·L/D</td><td>0.8793 − 0.03150·L/D</td><td>0.4038 + 0.04812·L/D</td></tr><tr><td>M_B</td><td>173.1</td><td>0.2146 − 0.002132·L/D</td><td>1.079 − 0.1087·L/D</td><td>0.8192 − 0.08588·L/D</td></tr></tbody></table></div>
+<p><strong><code>bothkennar</code>:</strong> soft clay (AWG 2018), as given in Burd et al. (2020b), Table 12:</p>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>x̄_u</th><th>k</th><th>n</th><th>ȳ_u</th></tr></thead><tbody><tr><td>p</td><td>173.8</td><td>12.05 − 1.547·z/D</td><td>0.7204 − 0.002679·z/D</td><td>7.743 − 3.945·exp(−0.8456·z/D)</td></tr><tr><td>m</td><td>m̄_u/k_m</td><td>1.698 − 0.1576·z/D</td><td>0</td><td>0.4862 − 0.05674·z/D</td></tr><tr><td>H_B</td><td>291.5</td><td>3.008 − 0.2701·L/D</td><td>0.3113 + 0.04263·L/D</td><td>0.5279 + 0.06864·L/D</td></tr><tr><td>M_B</td><td>187.0</td><td>0.3409 − 0.01995·L/D</td><td>0.6990 − 0.1155·L/D</td><td>0.8756 − 0.09195·L/D</td></tr></tbody></table></div>
+<p>Implementation details:</p>
+<ul><li><strong>Not iterative.</strong> Unlike in sand, the distributed moment does not depend on p, so the springs depend on the depth only. Under force control, all load levels run in one Abaqus job.</li><li><strong>Diameter:</strong> D is the mid-surface diameter, as in the sand model.</li><li><strong>s_u and G0</strong> are taken at the mid-depth of every half element (base springs: at the tip). s_u comes from the <code>su</code> column (<code>top-bottom</code> allowed). G0 comes from <code>g0</code>, the power law or Hardin &amp; Black, as in the sand model. The paper uses G0 = 1100·p′, i.e. the power law with <code>g0_ref</code> = 110 MPa and <code>lambda_g0</code> = 1 if K0 = 1 − sin φ fits the site. Otherwise give <code>g0</code> directly.</li><li><strong>Calibration space:</strong> 2 ≤ L/D ≤ 6, 5 ≤ h/D ≤ 15, 5 m ≤ D ≤ 10 m. z/D and L/D are clamped to it (warning). The parameters belong to the s_u and G0 profiles of the representative Cowden site (undrained loading). Other clays or strongly different profiles need a separate calibration (paper, Discussion).</li><li><strong>Sand layers</strong> are not covered and give an error (use <code>PISA</code> for layered sand/clay profiles, section 8).</li></ul>
+<p>Parameters: <code>su</code>, <code>pisa_clay</code> (optional, default <code>cowden</code>), G0 input, <code>phi</code> (optional, k0 for G0); <code>gamma_eff</code> is required by soil.csv but only used for G0.</p>
+<p>Reference soil data of the two calibrations (Burd et al. 2020b, Table 13):</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>Cowden till</th><th>Bothkennar clay</th></tr></thead><tbody><tr><td>submerged unit weight γ′</td><td>11.38 kN/m³</td><td>6.19 kN/m³</td></tr><tr><td>K0</td><td>variable (1.5 near the surface, ≈ 0.67 at 50 m)</td><td>0.65</td></tr></tbody></table></div>
+<h2 id="8-pisa-for-layered-soils--pisa">8. PISA for layered soils — <code>PISA</code></h2>
+<p>Burd, H. J. et al. (2020b). Application of the PISA design model to monopiles embedded in layered soils. Géotechnique 70(11), 1067–1082.</p>
+<p>The reaction curves calibrated for homogeneous soils are applied locally at every level of the pile. The soil type of the layer selects the framework (Table 11 of the paper):</p>
+<div class="table-wrap"><table><thead><tr><th>Layer</th><th>Reaction curves</th><th>Normalisation</th></tr></thead><tbody><tr><td>sand</td><td>GDSM (section 6), <code>dr</code> of the layer</td><td>σ′_v, G0; m = |p|·D·m̄</td></tr><tr><td>clay</td><td>Cowden till or Bothkennar clay (section 7), <code>pisa_clay</code></td><td>s_u, G0</td></tr></tbody></table></div>
+<p>How it works:</p>
+<ul><li><strong>Local soil values:</strong> every half element uses σ′_v, s_u and G0 at its own mid-depth.</li><li><strong>Base springs</strong> use the layer at the pile tip. Layers below the tip have no influence, as in the paper.</li><li><strong>Nodes</strong> lie at every layer boundary, so a node on a boundary gets half its spring from each layer.</li><li><strong>Iteration:</strong> the model is iterative if the profile contains sand (the sand distributed moment depends on p); a pure clay profile is not.</li><li><strong>Equivalence:</strong> for a homogeneous profile, <code>PISA</code> gives exactly the same springs as <code>PISA_SAND</code> or <code>PISA_CLAY</code>.</li></ul>
+<p>Validity (paper, 35 layered cases against 3D finite-element analyses):</p>
+<ul><li><strong>Small displacements:</strong> good in all cases (η_sd ≥ 0.9).</li><li><strong>Ultimate displacement:</strong> mostly good, but less accurate for combinations of soft clay (Bothkennar) and very dense sand, especially for L/D = 2 (η_ult down to 0.66). The model gives a warning for such profiles (Bothkennar clay together with D_R ≥ 85 %).</li><li><strong>Stiff layers below the pile tip</strong> can increase the capacity in 3D; the 1D model does not capture this.</li></ul>
+<p>Parameters: as for <code>PISA_SAND</code> in sand layers and <code>PISA_CLAY</code> in clay layers (<code>PISA_COLUMNS</code> in Input.py).</p>
+<h2 id="9-tott-buswell-et-al-2024-cpt-based-multi-spring-model--tott_buswell">9. Tott-Buswell et al. (2024), CPT-based multi-spring model — <code>TOTT_BUSWELL</code></h2>
+<p>Tott-Buswell, J., Prendergast, L. J., Gavin, K. (2024). A CPT-based multi-spring model for lateral monopile analysis under SLS conditions in sand. Ocean Engineering 293, 116642.</p>
+<p>Four uncoupled spring types, all informed by the cone resistance q_c of a CPT profile (CPT file, see the <a href="user_guide.html#3-soil-file-soilcsv">user guide</a>). The springs depend on the depth only, so the model is not iterative.</p>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>Curve</th><th>Spring</th></tr></thead><tbody><tr><td>distributed lateral load p(y)</td><td>power law after Li et al. (2014), eq. 1</td><td>lateral, every node</td></tr><tr><td>distributed moment m(θ)</td><td>parabola from the vertical shaft friction, eqs. 2–7</td><td>rotational, every node</td></tr><tr><td>base moment M_B(θ)</td><td>bilinear, eqs. 8, 9</td><td>rotational, pile tip</td></tr><tr><td>base shear H_B(y)</td><td>bilinear, eqs. 10–12</td><td>lateral, pile tip</td></tr></tbody></table></div>
+<p><strong>p-y</strong> (γ' = <code>gamma_eff</code> of the layer):</p>
+<pre class="formula">p = 3.6 · D · (γ&#x27;D) · (q_c/(γ&#x27;D))^0.72 · (y/D)^0.66</pre>
+<p>No ultimate value. The curve is sampled up to y = 0.5·D and is constant beyond.</p>
+<p><strong>m-θ.</strong> The axial τ-w curve of the unified CPT method (Lehane et al. 2020), τ = G0·w/(2D)·(1 − w/(2w_f)), is integrated around the circumference with w = θ·D/2·cos φ:</p>
+<pre class="formula">m = a·θ − b·θ²  (θ &lt; θ_f),   m = m_f  (θ ≥ θ_f)
+a = π·D²·G0/16,   b = G0²·D²/(96·τ_f)
+θ_f = 3π·τ_f/G0,  m_f = 3π²·D²·τ_f/32
+
+τ_f    = (f_t/f_c)·(σ&#x27;_rc + Δσ&#x27;_rd)·tan δ_f,   f_t/f_c = 0.8, δ_f = 29°
+σ&#x27;_rc  = (q_c/44)·A_re^0.3·max(1, H/D)^−0.4
+Δσ&#x27;_rd = (q_c/10)·(q_c/σ&#x27;_v)^−0.33·(d_CPT/D),   d_CPT = 35.7 mm
+A_re   = 1 − PLR·(D_i/D)²,   PLR = tanh(0.3·(D_i/d_CPT)^0.5)</pre>
+<p>H is the distance from the pile tip. τ_f is written to pile_profile.csv.</p>
+<p><strong>Base springs.</strong> The residual base stress q_b,res = α·q_c,r is set with <code>TOTT_BUSWELL_ALPHA</code> (paper: α = 0.1 recommended; 0.04 … 0.1 fitted to the field tests). q_c,r is the mean q_c from 0.25·L/D [m] above to 0.25·L/D [m] below the tip.</p>
+<pre class="formula">M_B,f = q_b,res·πD²/8 · 2D/(3π) = q_b,res·D³/12,   θ_B,f = 44.98·σ&#x27;_v,b/G0
+H_B,f = πD²/4 · q_b,res · tan 35°,                y_B,f = 2·ȳ·D·σ&#x27;_v,b/G0
+ȳ = (0.52 + 2.88·D_R) + (0.17 − 0.70·D_R)·L/D,    L/D limited to 2 … 6</pre>
+<p>Implementation details:</p>
+<ul><li><strong>q_c averaging:</strong> q_c is averaged over the pile length of every spring half element (the paper averages it over its 0.05 m elements). With a strongly varying q_c, use short elements.</li><li><strong>Diameters:</strong> D is the outer diameter (D + t if <code>DIAMETER_REFERENCE = &quot;mid&quot;</code>). The inner diameter is D_i = D − 2t; the paper writes D − t.</li><li><strong>G0:</strong> from the <code>g0</code> column of the CPT file if present, otherwise from soil.csv (<code>g0</code>, power law or Hardin &amp; Black, as for PISA/Thieken).</li><li><strong>D_R</strong> for the base shear: <code>dr</code> of the layer at the tip, 75 % (paper) if not given.</li><li><strong>Clay layers:</strong> Matlock p-y (lateral only, warning); no base springs if the tip is in clay.</li><li><strong><code>TOTT_BUSWELL_COMPONENTS</code></strong> selects the springs, e.g. <code>(&quot;p-y&quot;,)</code> or <code>(&quot;p-y&quot;, &quot;m-theta&quot;)</code> for the comparisons of the paper.</li></ul>
+<p>Validity: small to medium displacements (SLS, about 0.01·D at the mudline, mudline rotation ≤ 0.25°). The model does not predict the ultimate capacity. It works best for uniform or linearly increasing q_c profiles; strongly varying profiles give a too stiff response (paper, Dunkirk tests).</p>
+<p>Parameters: CPT file (<code>z</code>, <code>qc</code>, optional <code>g0</code>); in soil.csv <code>gamma_eff</code>, G0 input (if the CPT file has no <code>g0</code>), <code>phi</code> (optional, k0 for G0) and <code>dr</code> (optional).</p>
+<h2 id="10-choosing-a-model">10. Choosing a model</h2>
+<div class="table-wrap"><table><thead><tr><th>Question</th><th>Suitable model</th></tr></thead><tbody><tr><td>Design according to the offshore guidelines</td><td>API</td></tr><tr><td>Large-diameter monopile, realistic stiffness for all load levels (sand)</td><td>Thieken, PISA</td></tr><tr><td>Within the PISA calibration space (Dunkirk-like sand)</td><td>PISA</td></tr><tr><td>Stiff overconsolidated clay till (Cowden-like), within the PISA calibration space</td><td>PISA_CLAY</td></tr><tr><td>Layered sand/clay profiles with PISA-type soils</td><td>PISA</td></tr><tr><td>Foundation stiffness under very small loads only</td><td>Kallehave</td></tr><tr><td>Comparison with older studies</td><td>Sørensen (2010)</td></tr><tr><td>Serviceability (SLS) of monopiles from CPT data, L/D ≈ 3 … 13</td><td>TOTT_BUSWELL</td></tr></tbody></table></div>
+<p>Thieken et al. (2015) show that API, Kallehave and Sørensen are not generally suitable for large-diameter piles over the whole load range; the model comparison in <a href="verification.html#7-comparison-of-the-spring-models">Verification</a> shows the differences for the reference monopile.</p>
+</main>
+<footer>Automated Monopile Calculation &middot; documentation</footer>
+</body>
+</html>
